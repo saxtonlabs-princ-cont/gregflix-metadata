@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -341,7 +342,7 @@ class MetadataIngester:
 
     def _update_job_status(self, job_id: str, status: str, media_shape: str | None, error: str | None) -> None:
         with self.session_factory() as session:
-            job = session.get(MetadataJob, job_id)
+            job = session.get(MetadataJob, uuid.UUID(job_id))
             if job is None:
                 return
             job.status = status

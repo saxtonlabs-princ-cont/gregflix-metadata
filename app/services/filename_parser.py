@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-BRACKETED_JUNK_RE = re.compile(r"^\[[^\]]+\]")
+BRACKETED_JUNK_RE = re.compile(r"\[[^\]]+\]")
 SEASON_EPISODE_RE = re.compile(r"(?i)(?:s(?P<season>\d{1,2})e(?P<episode>\d{1,2})|(?P<season_alt>\d{1,2})x(?P<episode_alt>\d{1,2}))")
 YEAR_RE = re.compile(r"(?<!\d)(19\d{2}|20\d{2})(?!\d)")
 SEASON_FOLDER_RE = re.compile(r"(?i)^(?:season\s*(?P<season>\d{1,2})|s(?P<season_alt>\d{1,2}))$")
@@ -43,7 +43,7 @@ def parse_movie_candidate(name: str) -> tuple[str, int | None]:
     year_match = YEAR_RE.search(normalized)
     year = int(year_match.group(1)) if year_match else None
     if year_match:
-        title = normalized[: year_match.start()].strip()
+        title = normalized[: year_match.start()].strip(" -._(").strip()
     else:
         title = normalized
     return title, year

@@ -36,6 +36,15 @@ class ScanCoordinator:
 
         logger.info("scan started", extra={"event": "scan_started"})
         try:
+            if self._runner_task is not None and not self._runner_task.done():
+                return {
+                    "accepted": False,
+                    "message": "Metadata jobs are already running",
+                    "scan_in_progress": False,
+                    "queue_size": self.queue.queue_size,
+                    "job_running": True,
+                }
+
             summary = self.scanner.scan_all()
             for candidate in summary.queued:
                 job_id = self._create_job_record(str(candidate.folder_path), candidate.library_name, candidate.library_category)
@@ -99,7 +108,7 @@ class ScanCoordinator:
 
     def _mark_job_running(self, job_id: str) -> None:
         with self.session_factory() as session:
-            job = session.get(MetadataJob, job_id)
+            job = session.get(MetadataJob, uuid.UUID(job_id))
             if job is None:
                 return
             job.status = "running"

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import uuid
+
 from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy import select
 
@@ -20,7 +22,11 @@ def list_jobs(request: Request) -> list[dict[str, object]]:
 def get_job(job_id: str, request: Request) -> dict[str, object]:
     session_factory = request.app.state.session_factory
     with session_factory() as session:
-        job = session.get(MetadataJob, job_id)
+        try:
+            parsed_job_id = uuid.UUID(job_id)
+        except ValueError:
+            raise HTTPException(status_code=404, detail="Job not found") from None
+        job = session.get(MetadataJob, parsed_job_id)
         if job is None:
             raise HTTPException(status_code=404, detail="Job not found")
         return _serialize_job(job)
