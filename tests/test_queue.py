@@ -4,6 +4,7 @@ import pytest
 
 from app.jobs.queue import JobQueue
 from app.jobs.runner import ScanCoordinator
+from app.services.scanner import ScanSummary
 
 
 @pytest.mark.asyncio
@@ -22,9 +23,14 @@ async def test_queue_rejects_concurrent_scan():
 
 
 @pytest.mark.asyncio
-async def test_scan_coordinator_rejects_scan_while_jobs_are_running():
+async def test_scan_coordinator_allows_scan_while_jobs_are_running():
     queue = JobQueue()
-    coordinator = ScanCoordinator(queue, scanner=None, session_factory=None, ingester=None)
+
+    class EmptyScanner:
+        def scan_all(self, **kwargs):
+            return ScanSummary(queued=[], skipped_success=0, skipped_failure=0, skipped_invalid=0)
+
+    coordinator = ScanCoordinator(queue, scanner=EmptyScanner(), session_factory=None, ingester=None)
     coordinator._runner_task = asyncio.create_task(asyncio.sleep(0.1))
 
     try:
@@ -32,6 +38,6 @@ async def test_scan_coordinator_rejects_scan_while_jobs_are_running():
     finally:
         coordinator._runner_task.cancel()
 
-    assert result["accepted"] is False
-    assert result["job_running"] is True
+    assert result["accepted"] is True
+    assert result["queued_count"] == 0
     assert queue.scan_in_progress is False

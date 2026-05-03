@@ -7,12 +7,14 @@ from fastapi import FastAPI
 
 from app.api.health import router as health_router
 from app.api.jobs import router as jobs_router
+from app.api.metadata import router as metadata_router
 from app.api.scans import router as scans_router
 from app.config import get_config
 from app.db import create_session_factory
 from app.jobs.queue import JobQueue
 from app.jobs.runner import ScanCoordinator
 from app.logging_config import configure_logging
+from app.migrations import verify_schema_current
 from app.services.image_store import ImageStore
 from app.services.metadata_ingester import MetadataIngester
 from app.services.scanner import LibraryScanner
@@ -27,15 +29,20 @@ async def lifespan(app: FastAPI):
     configure_logging()
     config = get_config()
     logger.info("config loaded", extra={"event": "config_loaded"})
+    verify_schema_current(config)
+    logger.info("database schema verified", extra={"event": "database_schema_verified"})
     session_factory = create_session_factory(config)
     logger.info("database initialized", extra={"event": "database_initialized"})
 
-    scanner = LibraryScanner(config)
+    scanner = LibraryScanner(config, session_factory)
     queue = JobQueue()
     tmdb_client = TmdbClient(config.providers.tmdb)
     image_store = ImageStore(config.image_storage.root_path)
     ingester = MetadataIngester(config, session_factory, tmdb_client, image_store)
     coordinator = ScanCoordinator(queue, scanner, session_factory, ingester)
+    stale_jobs = coordinator.recover_stale_running_jobs()
+    if stale_jobs:
+        logger.warning("stale running jobs recovered", extra={"event": "stale_running_jobs_recovered", "count": stale_jobs})
 
     app.state.config = config
     app.state.session_factory = session_factory
@@ -50,6 +57,7 @@ app = FastAPI(title="GregFlix Metadata Service", lifespan=lifespan)
 app.include_router(health_router)
 app.include_router(scans_router)
 app.include_router(jobs_router)
+app.include_router(metadata_router)
 
 
 @app.get("/config/summary", tags=["config"])
@@ -71,4 +79,9 @@ def config_summary() -> dict[str, object]:
             "failure": config.scanner.failure_marker,
         },
         "supported_extensions": config.scanner.supported_extensions,
+        "artwork_preference": config.artwork.preference,
+        "matching": {
+            "confidence_threshold": config.matching.confidence_threshold,
+            "ambiguity_delta": config.matching.ambiguity_delta,
+        },
     }

@@ -15,6 +15,13 @@ providers:
 image_storage:
   root_path: /srv/gregflix/images
 
+artwork:
+  preference: prefer_provider
+
+matching:
+  confidence_threshold: 0.72
+  ambiguity_delta: 0.05
+
 libraries:
   - name: Movies
     category: movies

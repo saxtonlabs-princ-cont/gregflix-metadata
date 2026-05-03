@@ -27,11 +27,11 @@ class TmdbClient:
 
     async def search_movie(self, query: str) -> list[ProviderSearchResult]:
         payload = await self._get("/search/movie", {"query": query})
-        return [self._movie_search_result(item) for item in payload.get("results", [])]
+        return [self._movie_search_result(item, rank) for rank, item in enumerate(payload.get("results", []), start=1)]
 
     async def search_tv(self, query: str) -> list[ProviderSearchResult]:
         payload = await self._get("/search/tv", {"query": query})
-        return [self._tv_search_result(item) for item in payload.get("results", [])]
+        return [self._tv_search_result(item, rank) for rank, item in enumerate(payload.get("results", []), start=1)]
 
     async def get_movie_details(self, provider_id: str) -> ProviderDetails:
         payload = await self._get(f"/movie/{provider_id}")
@@ -105,7 +105,7 @@ class TmdbClient:
             response.raise_for_status()
             return response.content
 
-    def _movie_search_result(self, payload: dict[str, Any]) -> ProviderSearchResult:
+    def _movie_search_result(self, payload: dict[str, Any], rank: int) -> ProviderSearchResult:
         return ProviderSearchResult(
             provider_name=self.provider_name,
             provider_id=str(payload["id"]),
@@ -115,11 +115,13 @@ class TmdbClient:
             overview=payload.get("overview"),
             release_date=_parse_date(payload.get("release_date")),
             release_year=_parse_year(payload.get("release_date")),
+            popularity=_parse_float(payload.get("popularity")),
+            result_rank=rank,
             poster_path=payload.get("poster_path"),
             backdrop_path=payload.get("backdrop_path"),
         )
 
-    def _tv_search_result(self, payload: dict[str, Any]) -> ProviderSearchResult:
+    def _tv_search_result(self, payload: dict[str, Any], rank: int) -> ProviderSearchResult:
         return ProviderSearchResult(
             provider_name=self.provider_name,
             provider_id=str(payload["id"]),
@@ -129,6 +131,8 @@ class TmdbClient:
             overview=payload.get("overview"),
             release_date=_parse_date(payload.get("first_air_date")),
             release_year=_parse_year(payload.get("first_air_date")),
+            popularity=_parse_float(payload.get("popularity")),
+            result_rank=rank,
             poster_path=payload.get("poster_path"),
             backdrop_path=payload.get("backdrop_path"),
         )
@@ -143,3 +147,9 @@ def _parse_date(value: str | None) -> date | None:
 def _parse_year(value: str | None) -> int | None:
     parsed = _parse_date(value)
     return parsed.year if parsed else None
+
+
+def _parse_float(value: Any) -> float | None:
+    if value is None:
+        return None
+    return float(value)

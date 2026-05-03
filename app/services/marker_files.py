@@ -28,6 +28,14 @@ def detect_marker_state(folder_path: Path, success_marker: str, failure_marker: 
     return MarkerState(success_exists=success_exists, failure_exists=failure_exists)
 
 
+def read_marker_file(folder_path: Path, marker_name: str) -> dict[str, Any]:
+    marker_path = folder_path / marker_name
+    if not marker_path.exists():
+        return {}
+    payload = yaml.safe_load(marker_path.read_text(encoding="utf-8")) or {}
+    return payload if isinstance(payload, dict) else {}
+
+
 def _timestamp() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -44,9 +52,13 @@ def build_failure_marker_content(
     extracted_candidate_title: str | None = None,
     exception: Exception | None = None,
     provider_response_count: int | None = None,
+    job_id: str | None = None,
+    metadata_issue_id: str | None = None,
 ) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "job_status": "failed",
+        "job_id": job_id,
+        "metadata_issue_id": metadata_issue_id,
         "failed_at": _timestamp(),
         "library_name": library_name,
         "library_category": library_category,
@@ -79,9 +91,12 @@ def build_success_marker_content(
     image_paths_written: list[str],
     database_ids_written: dict[str, str],
     file_entries: list[dict[str, Any]],
+    job_id: str | None = None,
+    canonical_entity_ids: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     return {
         "job_status": "succeeded",
+        "job_id": job_id,
         "processed_at": _timestamp(),
         "library_name": library_name,
         "library_category": library_category,
@@ -93,6 +108,7 @@ def build_success_marker_content(
         "extracted_candidate_title": extracted_candidate_title,
         "image_paths_written": image_paths_written,
         "database_ids_written": database_ids_written,
+        "canonical_entity_ids": canonical_entity_ids or {},
         "files": file_entries,
     }
 

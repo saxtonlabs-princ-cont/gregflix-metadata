@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
 LibraryCategory = Literal["movies", "series", "anime", "documentaries"]
 MediaShape = Literal["film", "series"]
+ArtworkPreference = Literal["prefer_local", "prefer_provider", "provider_only", "local_only"]
 
 
 class PostgresConfig(BaseModel):
@@ -76,6 +77,15 @@ class ScannerConfig(BaseModel):
         return normalized
 
 
+class ArtworkConfig(BaseModel):
+    preference: ArtworkPreference = "prefer_provider"
+
+
+class MatchingConfig(BaseModel):
+    confidence_threshold: float = 0.72
+    ambiguity_delta: float = 0.05
+
+
 class AppConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -84,6 +94,8 @@ class AppConfig(BaseModel):
     image_storage: ImageStorageConfig
     libraries: list[LibraryConfig]
     scanner: ScannerConfig
+    artwork: ArtworkConfig = Field(default_factory=ArtworkConfig)
+    matching: MatchingConfig = Field(default_factory=MatchingConfig)
 
     @property
     def enabled_libraries(self) -> list[LibraryConfig]:

@@ -14,6 +14,8 @@ class ProviderSearchResult:
     overview: str | None = None
     release_date: date | None = None
     release_year: int | None = None
+    popularity: float | None = None
+    result_rank: int | None = None
     poster_path: str | None = None
     backdrop_path: str | None = None
 
