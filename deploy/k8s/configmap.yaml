@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gregflix-metadata-config
+  namespace: gregflix
+data:
+  config.yaml: |
+    postgres:
+      host: gregflix-postgres.gregflix.svc.cluster.local
+      port: 5432
+      database: gregflix
+      username: gregflix
+      password_env: GREGFLIX_POSTGRES_PASSWORD
+
+    providers:
+      tmdb:
+        enabled: true
+        api_key_env: TMDB_API_KEY
+        base_url: https://api.themoviedb.org/3
+        image_base_url: https://image.tmdb.org/t/p/original
+
+    image_storage:
+      root_path: /srv/gregflix/images
+
+    artwork:
+      preference: prefer_provider
+
+    matching:
+      confidence_threshold: 0.72
+      ambiguity_delta: 0.05
+
+    libraries:
+      - name: Movies
+        category: movies
+        path: /srv/gregflix/media/movies
+        enabled: true
+      - name: Series
+        category: series
+        path: /srv/gregflix/media/series
+        enabled: true
+      - name: Anime
+        category: anime
+        path: /srv/gregflix/media/anime
+        enabled: true
+      - name: Documentaries
+        category: documentaries
+        path: /srv/gregflix/media/documentaries
+        enabled: true
+
+    scanner:
+      success_marker: gf-meta-tag
+      failure_marker: gf-meta-failed
+      supported_extensions:
+        - .mkv
+        - .mp4
+        - .m4v
+        - .avi
+        - .mov
+        - .webm
+        - .ts
+        - .m2ts

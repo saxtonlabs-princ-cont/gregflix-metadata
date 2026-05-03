@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gregflix-metadata
+  namespace: gregflix
+  labels:
+    app.kubernetes.io/name: gregflix-metadata
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gregflix-metadata
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gregflix-metadata
+    spec:
+      containers:
+        - name: gregflix-metadata
+          image: registry.home.arpa/gregflix-metadata:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: GREGFLIX_METADATA_CONFIG
+              value: /app/config/config.yaml
+            - name: GREGFLIX_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: gregflix-metadata-secrets
+                  key: GREGFLIX_POSTGRES_PASSWORD
+            - name: TMDB_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gregflix-metadata-secrets
+                  key: TMDB_API_KEY
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: config
+              mountPath: /app/config/config.yaml
+              subPath: config.yaml
+              readOnly: true
+            - name: media-movies
+              mountPath: /srv/gregflix/media/movies
+              readOnly: true
+            - name: media-series
+              mountPath: /srv/gregflix/media/series
+              readOnly: true
+            - name: media-anime
+              mountPath: /srv/gregflix/media/anime
+              readOnly: true
+            - name: media-documentaries
+              mountPath: /srv/gregflix/media/documentaries
+              readOnly: true
+            - name: image-storage
+              mountPath: /srv/gregflix/images
+              readOnly: false
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+      volumes:
+        - name: config
+          configMap:
+            name: gregflix-metadata-config
+        - name: media-movies
+          persistentVolumeClaim:
+            claimName: gregflix-media-movies
+        - name: media-series
+          persistentVolumeClaim:
+            claimName: gregflix-media-series
+        - name: media-anime
+          persistentVolumeClaim:
+            claimName: gregflix-media-anime
+        - name: media-documentaries
+          persistentVolumeClaim:
+            claimName: gregflix-media-documentaries
+        - name: image-storage
+          persistentVolumeClaim:
+            claimName: gregflix-image-storage

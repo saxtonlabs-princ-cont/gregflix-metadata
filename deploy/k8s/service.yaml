@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gregflix-metadata
+  namespace: gregflix
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: gregflix-metadata
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
