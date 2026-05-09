@@ -1,3 +1,8 @@
+import uuid
+
+from sqlalchemy import BigInteger, create_engine
+from sqlalchemy.orm import Session
+
 from app.models import (
     ArtworkAsset,
     CanonicalMediaFile,
@@ -5,6 +10,8 @@ from app.models import (
     CatalogRowItem,
     EntityAlias,
     MediaEntity,
+    MediaFile,
+    MediaItem,
     MetadataEvidence,
     MetadataIssue,
     MetadataJob,
@@ -34,6 +41,45 @@ def test_media_file_points_to_media_entity():
     foreign_key = next(iter(CanonicalMediaFile.__table__.c.entity_id.foreign_keys))
 
     assert foreign_key.target_fullname == "metadata.media_entity.id"
+
+
+def test_legacy_media_file_size_bytes_uses_bigint():
+    size_column = MediaFile.__table__.c.size_bytes
+
+    assert isinstance(size_column.type, BigInteger)
+
+
+def test_legacy_media_file_persists_large_size_bytes():
+    large_size = 71_690_500_463
+    engine = create_engine("sqlite:///:memory:")
+    MediaItem.__table__.create(engine)
+    MediaFile.__table__.create(engine)
+
+    with Session(engine) as session:
+        media_item = MediaItem(
+            id=uuid.uuid4(),
+            media_shape="film",
+            library_category="movies",
+            title="Large File",
+            sort_title="Large File",
+        )
+        media_file = MediaFile(
+            id=uuid.uuid4(),
+            media_item=media_item,
+            original_path="/media/Large File.mkv",
+            original_filename="Large File.mkv",
+            sanitized_name="Large File.mkv",
+            extension=".mkv",
+            size_bytes=large_size,
+        )
+        session.add(media_file)
+        session.commit()
+
+    with Session(engine) as session:
+        stored = session.query(MediaFile).one()
+
+    assert large_size > 2_147_483_647
+    assert stored.size_bytes == large_size
 
 
 def test_metadata_jobs_has_durable_queue_columns():

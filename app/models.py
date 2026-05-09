@@ -59,7 +59,7 @@ class MediaFile(Base):
     original_filename: Mapped[str] = mapped_column(String(512), nullable=False)
     sanitized_name: Mapped[str] = mapped_column(String(512), nullable=False)
     extension: Mapped[str] = mapped_column(String(32), nullable=False)
-    size_bytes: Mapped[int | None] = mapped_column(Integer)
+    size_bytes: Mapped[int | None] = mapped_column(BigInteger)
     season_number: Mapped[int | None] = mapped_column(Integer)
     episode_number: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())

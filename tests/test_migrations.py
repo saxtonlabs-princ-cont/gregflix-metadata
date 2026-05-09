@@ -11,7 +11,7 @@ def test_alembic_has_single_deterministic_head():
     script = ScriptDirectory.from_config(alembic_config())
 
     assert script.get_heads() == [migration_head()]
-    assert migration_head() == "20260503_0006"
+    assert migration_head() == "20260510_0007"
 
 
 def test_initial_migration_uses_explicit_metadata_ddl_only():
@@ -107,6 +107,14 @@ def test_catalog_projection_migration_adds_views_and_rows():
     assert "playable_available" in content
     assert "provider_identity_summary" in content
     assert "playable_file_available" in content
+
+
+def test_media_files_size_bytes_bigint_migration_updates_legacy_table():
+    migration_path = Path("alembic/versions/20260510_0007_media_files_size_bytes_bigint.py")
+    content = migration_path.read_text(encoding="utf-8").lower()
+
+    assert "alter table media_files alter column size_bytes type bigint" in content
+    assert "drop table" not in content
 
 
 def test_schema_check_rejects_empty_database():
