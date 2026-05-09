@@ -231,6 +231,7 @@ user tables, or homelab API tables.
 - `GET /scans/status`
 - `GET /jobs`
 - `GET /jobs/{job_id}`
+- `POST /jobs/{job_id}/retry`
 - `GET /config/summary`
 - `POST /metadata/index-path`
 - `POST /metadata/retry-path`
@@ -273,6 +274,17 @@ immediately with the job ID and current status. They do not block until ingestio
 - `GET /metadata/issues`
 - `GET /metadata/diagnostics?entity_id=...`
 - `GET /metadata/diagnostics?path=...`
+
+Retry a failed or cancelled ingestion job after fixing the underlying folder or metadata issue:
+
+```powershell
+curl -X POST http://gregflix-metadata.gregflix.svc.cluster.local/jobs/<job-id>/retry
+```
+
+The retry endpoint validates that the original folder still exists under an enabled library root,
+removes only the failure marker such as `gf-meta-failed`, creates a new pending job, and starts the
+runner. If a pending or running job already exists for the same folder, the existing active job is
+returned instead of creating a duplicate.
 
 Path-trigger endpoints validate the requested path against configured enabled library roots and map
 descendant paths back to the top-level media folder. Arbitrary filesystem paths are rejected. This

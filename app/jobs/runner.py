@@ -158,6 +158,48 @@ class ScanCoordinator:
         with self.session_factory() as session:
             return session.get(MetadataJob, uuid.UUID(job_id))
 
+    def retry_job(self, job: MetadataJob, *, requester: str | None = None) -> tuple[MetadataJob, bool]:
+        with self.session_factory() as session:
+            active_job = session.scalar(
+                select(MetadataJob).where(
+                    MetadataJob.lock_key == job.lock_key,
+                    MetadataJob.status.in_(("pending", "running")),
+                )
+            )
+            if active_job is not None:
+                return active_job, False
+
+            retry = MetadataJob(
+                id=uuid.uuid4(),
+                status="pending",
+                job_type=job.job_type,
+                requester=requester or job.requester,
+                lock_key=job.lock_key,
+                folder_path=job.folder_path,
+                library_name=job.library_name,
+                library_category=job.library_category,
+                media_shape=job.media_shape,
+                retry_count=(job.retry_count or 0) + 1,
+            )
+            session.add(retry)
+            try:
+                session.commit()
+            except IntegrityError:
+                session.rollback()
+                active_job = session.scalar(
+                    select(MetadataJob).where(
+                        MetadataJob.lock_key == job.lock_key,
+                        MetadataJob.status.in_(("pending", "running")),
+                    )
+                )
+                if active_job is not None:
+                    return active_job, False
+                raise
+            session.refresh(retry)
+
+        self.ensure_runner_started()
+        return retry, True
+
     def ensure_runner_started(self) -> None:
         if self._runner_task is None or self._runner_task.done():
             if self.pending_job_count() > 0:

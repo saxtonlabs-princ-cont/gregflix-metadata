@@ -11,6 +11,7 @@ from tests.test_scanner import build_config
 def test_metadata_trigger_routes_are_registered():
     paths = {route.path for route in app.routes}
 
+    assert "/jobs/{job_id}/retry" in paths
     assert "/metadata/index-path" in paths
     assert "/metadata/retry-path" in paths
     assert "/metadata/entities/{entity_id}/refresh-provider" in paths
