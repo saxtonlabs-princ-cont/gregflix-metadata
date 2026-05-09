@@ -14,14 +14,23 @@ class TmdbClient:
 
     def __init__(self, config: TmdbProviderConfig) -> None:
         self.config = config
-        self.api_key = config.api_key().get_secret_value()
+        self.auth_mode = config.auth_mode
+        self.read_access_token = (
+            config.read_access_token().get_secret_value() if self.auth_mode == "bearer_token" else None
+        )
+        self.api_key = config.api_key().get_secret_value() if self.auth_mode == "api_key" else None
 
     async def _get(self, path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
-        request_params = {"api_key": self.api_key}
-        if params:
-            request_params.update(params)
+        request_params = dict(params or {})
+        headers = None
+        if self.auth_mode == "bearer_token":
+            headers = {"Authorization": f"Bearer {self.read_access_token}"}
+        elif self.auth_mode == "api_key":
+            request_params["api_key"] = self.api_key
+        else:
+            raise ValueError(f"Unsupported TMDB auth_mode: {self.auth_mode}")
         async with httpx.AsyncClient(base_url=self.config.base_url, timeout=30.0) as client:
-            response = await client.get(path, params=request_params)
+            response = await client.get(path, params=request_params, headers=headers)
             response.raise_for_status()
             return response.json()
 

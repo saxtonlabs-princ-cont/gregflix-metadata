@@ -29,7 +29,19 @@ Set:
 
 - `GREGFLIX_METADATA_CONFIG` to the YAML config path, or omit it to use `./config.yaml`
 - `GREGFLIX_POSTGRES_PASSWORD` for the Postgres password
-- `TMDB_API_KEY` for TMDB access
+- `TMDB_READ_ACCESS_TOKEN` for TMDB Bearer authentication
+
+TMDB auth defaults to `bearer_token`:
+
+```yaml
+providers:
+  tmdb:
+    auth_mode: bearer_token
+    read_access_token_env: TMDB_READ_ACCESS_TOKEN
+```
+
+Legacy v3 API key authentication is still supported by setting `auth_mode: api_key` and providing
+`TMDB_API_KEY` through `api_key_env`.
 
 Use [config.example.yaml](/C:/Users/sdgre/PycharmProjects/gregflix-metadata/config.example.yaml) as the starting point.
 
@@ -301,7 +313,8 @@ kubectl apply -f deploy/k8s/deployment.yaml
 values. The Deployment references `gregflix-metadata-secrets` keys:
 
 - `GREGFLIX_POSTGRES_PASSWORD`
-- `TMDB_API_KEY`
+- `TMDB_READ_ACCESS_TOKEN`
+- `TMDB_API_KEY` only when `providers.tmdb.auth_mode` is `api_key`
 
 Media PVCs are mounted read-only:
 

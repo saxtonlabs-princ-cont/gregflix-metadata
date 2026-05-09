@@ -8,9 +8,12 @@ postgres:
 providers:
   tmdb:
     enabled: true
-    api_key_env: TMDB_API_KEY
     base_url: https://api.themoviedb.org/3
     image_base_url: https://image.tmdb.org/t/p/original
+    auth_mode: bearer_token
+    read_access_token_env: TMDB_READ_ACCESS_TOKEN
+    # For legacy v3 API key auth, set auth_mode: api_key and provide TMDB_API_KEY.
+    api_key_env: TMDB_API_KEY
 
 image_storage:
   root_path: /srv/gregflix/images

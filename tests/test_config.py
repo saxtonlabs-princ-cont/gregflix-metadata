@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from app.config import load_config
+from app.config import TmdbProviderConfig, load_config
 
 
 def test_load_config(tmp_path: Path, monkeypatch):
@@ -43,6 +43,7 @@ scanner:
     assert config.enabled_libraries[0].name == "Movies"
     assert config.artwork.preference == "prefer_provider"
     assert config.matching.confidence_threshold == 0.72
+    assert config.providers.tmdb.auth_mode == "api_key"
 
 
 def test_load_artwork_preference(tmp_path: Path, monkeypatch):
@@ -78,3 +79,16 @@ scanner:
     config = load_config(config_path)
 
     assert config.artwork.preference == "prefer_local"
+
+
+def test_tmdb_config_defaults_to_bearer_token_for_new_configs():
+    config = TmdbProviderConfig.model_validate(
+        {
+            "base_url": "https://api.themoviedb.org/3",
+            "image_base_url": "https://image.tmdb.org/t/p/original",
+        }
+    )
+
+    assert config.auth_mode == "bearer_token"
+    assert config.read_access_token_env == "TMDB_READ_ACCESS_TOKEN"
+    assert config.api_key_env == "TMDB_API_KEY"

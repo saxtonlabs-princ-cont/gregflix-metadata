@@ -28,11 +28,17 @@ spec:
                 secretKeyRef:
                   name: gregflix-metadata-secrets
                   key: GREGFLIX_POSTGRES_PASSWORD
+            - name: TMDB_READ_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: gregflix-metadata-secrets
+                  key: TMDB_READ_ACCESS_TOKEN
             - name: TMDB_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: gregflix-metadata-secrets
                   key: TMDB_API_KEY
+                  optional: true
           volumeMounts:
             - name: config
               mountPath: /app/config/config.yaml

@@ -6,12 +6,13 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 
 
 LibraryCategory = Literal["movies", "series", "anime", "documentaries"]
 MediaShape = Literal["film", "series"]
 ArtworkPreference = Literal["prefer_local", "prefer_provider", "provider_only", "local_only"]
+TmdbAuthMode = Literal["bearer_token", "api_key"]
 
 
 class PostgresConfig(BaseModel):
@@ -34,14 +35,41 @@ class PostgresConfig(BaseModel):
 
 class TmdbProviderConfig(BaseModel):
     enabled: bool = True
-    api_key_env: str
     base_url: str
     image_base_url: str
+    auth_mode: TmdbAuthMode = "bearer_token"
+    read_access_token_env: str = "TMDB_READ_ACCESS_TOKEN"
+    api_key_env: str = "TMDB_API_KEY"
+
+    @model_validator(mode="before")
+    @classmethod
+    def default_legacy_api_key_configs(cls, data):
+        if (
+            isinstance(data, dict)
+            and "auth_mode" not in data
+            and "api_key_env" in data
+            and "read_access_token_env" not in data
+        ):
+            return {**data, "auth_mode": "api_key"}
+        return data
+
+    def read_access_token(self) -> SecretStr:
+        if self.auth_mode != "bearer_token":
+            raise ValueError("TMDB read access token requested while auth_mode is not bearer_token")
+        value = os.environ.get(self.read_access_token_env)
+        if not value:
+            raise ValueError(
+                f"Missing TMDB read access token environment variable for bearer_token auth: "
+                f"{self.read_access_token_env}"
+            )
+        return SecretStr(value)
 
     def api_key(self) -> SecretStr:
+        if self.auth_mode != "api_key":
+            raise ValueError("TMDB API key requested while auth_mode is not api_key")
         value = os.environ.get(self.api_key_env)
         if not value:
-            raise ValueError(f"Missing TMDB API key environment variable: {self.api_key_env}")
+            raise ValueError(f"Missing TMDB API key environment variable for api_key auth: {self.api_key_env}")
         return SecretStr(value)
 
 
