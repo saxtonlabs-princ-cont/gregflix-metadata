@@ -48,8 +48,11 @@ async def lifespan(app: FastAPI):
     app.state.session_factory = session_factory
     app.state.scan_coordinator = coordinator
 
-    logger.info("startup scan triggered", extra={"event": "startup_scan_triggered"})
-    await coordinator.trigger_scan()
+    if config.startup.scan_on_startup:
+        logger.info("startup scan triggered", extra={"event": "startup_scan_triggered"})
+        await coordinator.trigger_scan()
+    else:
+        logger.info("startup scan disabled", extra={"event": "startup_scan_disabled"})
     yield
 
 

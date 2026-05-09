@@ -44,6 +44,7 @@ scanner:
     assert config.artwork.preference == "prefer_provider"
     assert config.matching.confidence_threshold == 0.72
     assert config.providers.tmdb.auth_mode == "api_key"
+    assert config.startup.scan_on_startup is False
 
 
 def test_load_artwork_preference(tmp_path: Path, monkeypatch):
@@ -92,3 +93,37 @@ def test_tmdb_config_defaults_to_bearer_token_for_new_configs():
     assert config.auth_mode == "bearer_token"
     assert config.read_access_token_env == "TMDB_READ_ACCESS_TOKEN"
     assert config.api_key_env == "TMDB_API_KEY"
+
+
+def test_load_startup_scan_on_startup(tmp_path: Path, monkeypatch):
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        """
+postgres:
+  host: localhost
+  database: gregflix
+  username: gregflix
+  password_env: GREGFLIX_POSTGRES_PASSWORD
+providers:
+  tmdb:
+    api_key_env: TMDB_API_KEY
+    base_url: https://api.themoviedb.org/3
+    image_base_url: https://image.tmdb.org/t/p/original
+image_storage:
+  root_path: /tmp/images
+startup:
+  scan_on_startup: true
+libraries:
+  - name: Movies
+    category: movies
+    path: /tmp/movies
+scanner:
+  supported_extensions: [.mkv]
+        """.strip(),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GREGFLIX_POSTGRES_PASSWORD", "secret")
+
+    config = load_config(config_path)
+
+    assert config.startup.scan_on_startup is True

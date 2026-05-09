@@ -114,6 +114,10 @@ class MatchingConfig(BaseModel):
     ambiguity_delta: float = 0.05
 
 
+class StartupConfig(BaseModel):
+    scan_on_startup: bool = False
+
+
 class AppConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -124,6 +128,7 @@ class AppConfig(BaseModel):
     scanner: ScannerConfig
     artwork: ArtworkConfig = Field(default_factory=ArtworkConfig)
     matching: MatchingConfig = Field(default_factory=MatchingConfig)
+    startup: StartupConfig = Field(default_factory=StartupConfig)
 
     @property
     def enabled_libraries(self) -> list[LibraryConfig]:

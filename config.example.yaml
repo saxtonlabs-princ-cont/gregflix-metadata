@@ -25,6 +25,9 @@ matching:
   confidence_threshold: 0.72
   ambiguity_delta: 0.05
 
+startup:
+  scan_on_startup: false
+
 libraries:
   - name: Movies
     category: movies
