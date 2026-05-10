@@ -18,7 +18,7 @@ spec:
       containers:
         - name: gregflix-metadata
           image: registry.home.arpa/gregflix-metadata:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8000
@@ -62,20 +62,11 @@ spec:
               mountPath: /app/config/config.yaml
               subPath: config.yaml
               readOnly: true
-            - name: media-movies
-              mountPath: /srv/gregflix/media/movies
-              readOnly: true
-            - name: media-series
-              mountPath: /srv/gregflix/media/series
-              readOnly: true
-            - name: media-anime
-              mountPath: /srv/gregflix/media/anime
-              readOnly: true
-            - name: media-documentaries
-              mountPath: /srv/gregflix/media/documentaries
-              readOnly: true
+            - name: media-p
+              mountPath: /srv/gregflix/media-p
+              readOnly: false
             - name: image-storage
-              mountPath: /srv/gregflix/images
+              mountPath: /srv/gregflix/meta
               readOnly: false
           resources:
             requests:
@@ -88,18 +79,9 @@ spec:
         - name: config
           configMap:
             name: gregflix-metadata-config
-        - name: media-movies
+        - name: media-p
           persistentVolumeClaim:
             claimName: gregflix-media-movies
-        - name: media-series
-          persistentVolumeClaim:
-            claimName: gregflix-media-series
-        - name: media-anime
-          persistentVolumeClaim:
-            claimName: gregflix-media-anime
-        - name: media-documentaries
-          persistentVolumeClaim:
-            claimName: gregflix-media-documentaries
         - name: image-storage
           persistentVolumeClaim:
             claimName: gregflix-image-storage

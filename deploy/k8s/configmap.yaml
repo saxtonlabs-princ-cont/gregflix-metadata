@@ -6,10 +6,10 @@ metadata:
 data:
   config.yaml: |
     postgres:
-      host: gregflix-postgres.gregflix.svc.cluster.local
+      host: gregflix-postgres.storage.svc.cluster.local
       port: 5432
       database: gregflix
-      username: gregflix
+      username: Admin
       password_env: GREGFLIX_POSTGRES_PASSWORD
 
     providers:
@@ -23,7 +23,7 @@ data:
         api_key_env: TMDB_API_KEY
 
     image_storage:
-      root_path: /srv/gregflix/images
+      root_path: /srv/gregflix/meta
 
     artwork:
       preference: prefer_provider
@@ -38,19 +38,19 @@ data:
     libraries:
       - name: Movies
         category: movies
-        path: /srv/gregflix/media/movies
+        path: /srv/gregflix/media-p/movies
         enabled: true
       - name: Series
         category: series
-        path: /srv/gregflix/media/series
+        path: /srv/gregflix/media-p/series
         enabled: true
       - name: Anime
         category: anime
-        path: /srv/gregflix/media/anime
+        path: /srv/gregflix/media-p/anime
         enabled: true
       - name: Documentaries
         category: documentaries
-        path: /srv/gregflix/media/documentaries
+        path: /srv/gregflix/media-p/documentaries
         enabled: true
 
     scanner:

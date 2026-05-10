@@ -18,7 +18,7 @@ spec:
       containers:
         - name: migrate
           image: registry.home.arpa/gregflix-metadata:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           command: ["python", "-m", "app", "migrate"]
           env:
             - name: GREGFLIX_METADATA_CONFIG
